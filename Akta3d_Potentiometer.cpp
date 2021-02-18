@@ -1,7 +1,7 @@
 #include "Arduino.h"
 #include "Akta3d_Potentiometer.h"
 
-Akta3d_Potentiometer::Akta3d_Potentiometer(uint16_t pin, int minValue, int maxValue, int minA /*= 0*/, int maxA /*= 1024*/, float lowPassBCoeff /*= 0.2*/) {
+Akta3d_Potentiometer::Akta3d_Potentiometer(uint16_t pin, int minValue, int maxValue, int minA /*= 0*/, int maxA /*= 1024*/, float lowPassBCoeff /*= 0.2*/, int updateValueEachMs /*=50*/) {
   _pin = pin;
   _minValue = minValue;
   _maxValue = maxValue;
@@ -14,14 +14,21 @@ Akta3d_Potentiometer::Akta3d_Potentiometer(uint16_t pin, int minValue, int maxVa
   _lastAnalogValue = _minA;
   _newComputedValue = _minValue;
   _lastComputedValue = _minValue;
+
+  _updateValueEachMs = updateValueEachMs;
+  _lastUpdate = millis();
 }
 
 void Akta3d_Potentiometer::update() {
-  int newAnalogValue = analogRead(_pin);
-  newAnalogValue = (1 - _bCoeff) * _lastAnalogValue + _bCoeff * newAnalogValue;
-  _lastAnalogValue = newAnalogValue;
+  if((_updateValueEachMs > 0) && (_lastUpdate + _updateValueEachMs < millis())) {
+    _lastUpdate = millis();
 
-  _lastComputedValue = map(newAnalogValue, _minA, _maxA, _minValue, _maxValue);
+    int newAnalogValue = analogRead(_pin);
+    newAnalogValue = (1 - _bCoeff) * _lastAnalogValue + _bCoeff * newAnalogValue;
+    _lastAnalogValue = newAnalogValue;
+
+    _lastComputedValue = map(newAnalogValue, _minA, _maxA, _minValue, _maxValue);
+  }
 }
 
 bool Akta3d_Potentiometer::changed() {
